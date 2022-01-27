@@ -15,6 +15,9 @@ class Socket {
         int Send(char* msg);
         int Recev();
         int SetSocketNonBlocking();
+        int Fd(){
+            return socket_fd;
+        }
         char* ReadBuf(){
             return read_buf;
         }

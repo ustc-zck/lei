@@ -9,14 +9,12 @@
 Socket::Socket(){
     //only support ipv4...
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in  a = {0};
-    address = &a;
+    address = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in*));
 }
 
 Socket::Socket(int fd){
     socket_fd = fd;
-    struct sockaddr_in a = {0};
-    address = &a;
+    address = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in*));
 }
 
 Socket::~Socket(){
@@ -24,9 +22,7 @@ Socket::~Socket(){
         read_buf[1023] = '\0';
         delete [] read_buf;
     }
-    
     delete address;
-
     close(socket_fd);
 }
 
