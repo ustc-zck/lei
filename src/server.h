@@ -1,4 +1,5 @@
 #include "socket.h"
+#include <string>
 
 enum EventType {IOEVENT, TIMEEVENT, SIGNALEVENT};
 
@@ -9,8 +10,8 @@ class Server{
     public:
         Server(int port = 8080);
         ~Server();
-        //set io process func...
-        void SetIOProc();
+        //IO Handle fun...
+        char* (*Handler)(char* buf);
         //run server...
         int Run();
     private:
@@ -18,4 +19,5 @@ class Server{
         struct epoll_event* event;
         struct epoll_event *events;
         Socket* listen_socket;
+       
 };

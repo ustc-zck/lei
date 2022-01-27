@@ -50,9 +50,34 @@ int Server::Run(){
                             break;
                         }
                         Socket* new_socket = new Socket(new_fd);
+                        new_socket->SetSocketNonBlocking();
+                        event.data.fd = new_fd;
+                        event.events = EPOLLIN | EPOLLET;
+                        if(epoll_ctl(efd, EPOLL_CTL_ADD, new_fd, &event) < 0){
+                            std::cout << "failed to add fd into epoll event" << std::endl;
+                            abort();
+                        }
                     }
-                } else{
-                    ;
+                } else {
+                    //IO event...
+                    Socket* s = new Socket(events[i].data.fd);
+                    //adopt a maxmium buf size...
+                    //about the buf size, there is a balance here...
+                    int n = s->Recev();
+                    if (n < 0){
+                        continue;
+                    }
+
+                    char* buf = s->ReadBuf();
+                    buf[n] = '\0';
+                    std::string str = buf;
+                    //error happened, close fd...
+                    if(s->Send(Handler(buf)) < 0){
+                        if(epoll_ctl(efd, EPOLL_CTL_DEL, events[i].data.fd, &events[i]) < 0){
+                            aort();
+                        }
+                    }
+                    delete s;
                 }
             } else{
                 ;
