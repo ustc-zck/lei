@@ -2,6 +2,7 @@
 #include <sys/epoll.h>
 #include <iostream>
 #include <unistd.h>
+#include <sys/timerfd.h>
 
 Server::Server(int port){
     efd = epoll_create1(0);
@@ -30,6 +31,36 @@ Server::Server(int port){
         abort();
     }
     events = (struct epoll_event*) calloc(MAXEVENTS, sizeof(struct epoll_event*));
+
+    int tfd;
+    tfd = timerfd_create(CLOCK_MONOTONIC, 0);
+    if(tfd < 0){
+        abort();
+    }
+    timer_socket = new Socket(tfd);
+}
+
+int Server::AddTimeEvent(int milliseconds, int type){
+    struct itimerspec ts;
+    if(type == 0){
+        ts.it_interval.tv_sec = milliseconds / 1000;
+    	ts.it_interval.tv_nsec = (milliseconds % 1000) * 1000000;
+    } else{
+        ts.it_value.tv_sec =  milliseconds / 1000;
+	    ts.it_value.tv_nsec = (milliseconds % 1000) * 1000000;
+    }
+
+    if(timerfd_settime(timer_socket->Fd(), 0, &ts, NULL) < 0){
+        return -1;
+    }
+    timer_socket->SetSocketNonBlocking();
+
+    event->data.fd = timer_socket->Fd();
+    events->events = EPOLLIN | EPOLLET;
+    if (epoll_ctl(efd, EPOLL_CTL_ADD, timer_socket->Fd(), event) < 0){
+        return -1;
+    }
+    return 0;
 }
 
 int Server::Run(){
@@ -61,7 +92,11 @@ int Server::Run(){
                             std::cout << "failed to add fd into epoll event" << std::endl;
                         }
                     }
-                } else {
+                } else if(events[i].data.fd == timer_socket->Fd()){
+                    //timer event...
+                    TimeHandler();
+                }
+                else {
                     //IO event...
                     Socket* s = new Socket(events[i].data.fd);
                     //about the buf size, there is a balance here...
@@ -90,6 +125,7 @@ int Server::Run(){
 
 Server::~Server(){
     delete listen_socket;
+    delete timer_socket;
     delete []events;
-    delete efd;
+    close(efd);
 }
