@@ -5,9 +5,12 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
+#include <thread>
+
 
 //to be optimized...
-const int MAXEVENTS = 1024;
+const int MAXEVENTS = 4096;
+const int MAXTHREADS = 1024;
 
 class Server{
     public:
@@ -37,6 +40,7 @@ class Server{
                 close(fd);
             }
         }
+       
         //run server...
         int Run();
     private:
@@ -45,6 +49,7 @@ class Server{
         struct epoll_event* event;
         struct epoll_event *events;
         Socket* listen_socket;
-
         Socket* timer_socket;
+        //thread pool...
+        std::vector<std::thread> threads;
 };

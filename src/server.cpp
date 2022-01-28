@@ -38,6 +38,8 @@ Server::Server(int port){
         abort();
     }
     timer_socket = new Socket(tfd);
+    std::vector<std::thread> ths(MAXTHREADS);
+    threads = std::move(ths);
 }
 
 int Server::AddTimeEvent(int milliseconds){
@@ -64,6 +66,7 @@ int Server::Run(){
     std::cout << "Blocking and wait for epoll event..." << std::endl;
     int n;
     while(1){
+        int thread_index = 0;
         //specifying timeout equals 0 causes epoll_wait to  return immediately, even if no events are available.
         //blocking timeout here...
         n = epoll_wait(efd, events, MAXEVENTS, 0);
@@ -99,23 +102,11 @@ int Server::Run(){
                     TimeHandler();
                 }
                 else {
-                    //IO event...
-                    // Socket* s = new Socket(events[i].data.fd);
-                    // //about the buf size, there is a balance here...
-                    // int n = s->Recev();
-                    // if (n < 0){
-                    //     continue;
-                    // }   
-
-                    // char* buf = s->ReadBuf();
-                    // buf[n] = '\0';
-                    // //call Handler...
-                    // char* toWrite = Handler(buf);
-                    // //error happened, close fd...
-                    // if(s->Send(toWrite) < 0){
-                    //     close(events[i].data.fd);
-                    //}
-                    Wrapper(events[i].data.fd);
+                    //Wrapper(events[i].data.fd);
+                    int fd = events[i].data.fd;
+                    
+                    threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
+                    threads[thread_index % MAXTHREADS].join();
                 }
             } else{
                 //TODO...
