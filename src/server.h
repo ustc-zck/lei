@@ -14,10 +14,11 @@ class Server{
         char* (*Handler)(char* buf);
         //run server...
         int Run();
+        int AddTimerEvent();
     private:
         int efd;
         struct epoll_event* event;
         struct epoll_event *events;
         Socket* listen_socket;
-       
+        Socket* timer_socket;
 };
