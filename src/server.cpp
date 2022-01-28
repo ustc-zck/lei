@@ -33,23 +33,20 @@ Server::Server(int port){
     events = (struct epoll_event*) calloc(MAXEVENTS, sizeof(struct epoll_event*));
 
     int tfd;
-    tfd = timerfd_create(CLOCK_MONOTONIC, 0);
+    tfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     if(tfd < 0){
         abort();
     }
     timer_socket = new Socket(tfd);
 }
 
-int Server::AddTimeEvent(int milliseconds, int type){
+int Server::AddTimeEvent(int milliseconds){
     struct itimerspec ts;
-    if(type == 0){
-        ts.it_interval.tv_sec = milliseconds / 1000;
-    	ts.it_interval.tv_nsec = (milliseconds % 1000) * 1000000;
-    } else{
-        ts.it_value.tv_sec =  milliseconds / 1000;
-	    ts.it_value.tv_nsec = (milliseconds % 1000) * 1000000;
-    }
-
+    ts.it_value.tv_sec =  milliseconds / 1000;
+    ts.it_value.tv_nsec = (milliseconds % 1000) * 1000000;
+    ts.it_interval.tv_sec = milliseconds / 1000;
+    ts.it_interval.tv_nsec = (milliseconds % 1000) * 1000000;
+    
     if(timerfd_settime(timer_socket->Fd(), 0, &ts, NULL) < 0){
         return -1;
     }
@@ -94,6 +91,11 @@ int Server::Run(){
                     }
                 } else if(events[i].data.fd == timer_socket->Fd()){
                     //timer event...
+                    int ret = timer_socket->Recev();
+                    if (ret != sizeof(uint64_t)){
+                        std::cout << "timer fd error" << std::endl;
+                        close(timer_socket->Fd());
+                    }
                     TimeHandler();
                 }
                 else {
