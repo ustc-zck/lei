@@ -104,8 +104,12 @@ int Server::Run(){
                 else {
                     //Wrapper(events[i].data.fd);
                     int fd = events[i].data.fd;
-                    
+                    //find a joinable thread...
                     threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
+                    while(!threads[thread_index % MAXTHREADS].joinable()){
+                        thread_index++;
+                        threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
+                    }
                     threads[thread_index % MAXTHREADS].join();
                 }
             } else{
