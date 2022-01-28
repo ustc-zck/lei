@@ -1,8 +1,10 @@
 #include "socket.h"
 #include <string>
 #include <vector>
-enum EventType {IOEVENT, TIMEEVENT, SIGNALEVENT};
 
+#include <sys/epoll.h>
+#include <unistd.h>
+#include <sys/timerfd.h>
 
 //to be optimized...
 const int MAXEVENTS = 1024;
@@ -17,6 +19,24 @@ class Server{
         int (*TimeHandler)();
         //Add time event...
         int AddTimeEvent(int millisceonds);
+        //wrapper...
+        void Wrapper(int fd){
+            Socket* s = new Socket(fd);
+            //about the buf size, there is a balance here...
+            int n = s->Recev();
+            if (n < 0){
+                close(fd);
+                return;
+            }   
+            char* buf = s->ReadBuf();
+            buf[n] = '\0';
+            //call Handler...
+            char* toWrite = Handler(buf);
+            //error happened, close fd...
+            if(s->Send(toWrite) < 0){
+                close(fd);
+            }
+        }
         //run server...
         int Run();
     private:

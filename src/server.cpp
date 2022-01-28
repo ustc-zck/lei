@@ -100,21 +100,22 @@ int Server::Run(){
                 }
                 else {
                     //IO event...
-                    Socket* s = new Socket(events[i].data.fd);
-                    //about the buf size, there is a balance here...
-                    int n = s->Recev();
-                    if (n < 0){
-                        continue;
-                    }   
+                    // Socket* s = new Socket(events[i].data.fd);
+                    // //about the buf size, there is a balance here...
+                    // int n = s->Recev();
+                    // if (n < 0){
+                    //     continue;
+                    // }   
 
-                    char* buf = s->ReadBuf();
-                    buf[n] = '\0';
-                    //call Handler...
-                    char* toWrite = Handler(buf);
-                    //error happened, close fd...
-                    if(s->Send(toWrite) < 0){
-                        close(events[i].data.fd);
-                    }
+                    // char* buf = s->ReadBuf();
+                    // buf[n] = '\0';
+                    // //call Handler...
+                    // char* toWrite = Handler(buf);
+                    // //error happened, close fd...
+                    // if(s->Send(toWrite) < 0){
+                    //     close(events[i].data.fd);
+                    //}
+                    Wrapper(events[i].data.fd);
                 }
             } else{
                 //TODO...
