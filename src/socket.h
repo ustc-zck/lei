@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <string>
 
+const int BUFSIZE = 1024;
 class Socket {
     public:
         Socket();
@@ -25,7 +26,7 @@ class Socket {
     private:
         int socket_fd;
         struct sockaddr_in* address;
-        char read_buf[1024];
+        char read_buf[BUFSIZ];
 };
 
 struct KeepConfig {

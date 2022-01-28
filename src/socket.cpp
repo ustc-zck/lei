@@ -22,7 +22,7 @@ Socket::Socket(int fd){
 
 Socket::~Socket(){
     if(read_buf){
-        read_buf[1023] = '\0';
+        read_buf[BUFSIZ-1] = '\0';
         delete [] read_buf;
     }
     delete address;
