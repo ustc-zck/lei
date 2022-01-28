@@ -5,11 +5,18 @@
 #include <unistd.h>
 #include <string.h>
 #include <string>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+
+const int BUFSIZE = 1024;
+
 
 Socket::Socket(){
     //only support ipv4...
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     address = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in*));
+    read_buf = new char[BUFSIZE];
 }
 
 Socket::Socket(int fd){
@@ -19,7 +26,7 @@ Socket::Socket(int fd){
 
 Socket::~Socket(){
     if(read_buf){
-        read_buf[1023] = '\0';
+        read_buf[BUFSIZ-1] = '\0';
         delete [] read_buf;
     }
     delete address;
@@ -109,7 +116,7 @@ int Socket::Send(char* msg){
     return ret;
 }
 
-int Socket::Connect(std::string addr){  
+int Socket::Connect(std::string addr, bool keep_alive){  
     int pos = addr.find(":");
     std::string ip = addr.substr(0, pos);
     std::string port = addr.substr(pos+1);
@@ -121,6 +128,22 @@ int Socket::Connect(std::string addr){
     if(inet_pton(AF_INET, ip.c_str(), &address->sin_addr) <= 0){
         std::cout << "Invalid address / Address not supported" << std::endl;
         return -1;
+    }
+    if(keep_alive){
+        int optval = 1;
+        if(setsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) < 0){
+            return -1;
+        }
+        struct KeepConfig cfg = {60, 5, 5};
+        if(setsockopt(socket_fd, IPPROTO_TCP, TCP_KEEPCNT, &cfg.keepcnt, sizeof cfg.keepcnt) < 0){
+            return -1;
+        }
+        if(setsockopt(socket_fd, IPPROTO_TCP, TCP_KEEPIDLE, &cfg.keepidle, sizeof cfg.keepidle) < 0){
+            return -1;
+        }
+        if(setsockopt(socket_fd, IPPROTO_TCP, TCP_KEEPINTVL, &cfg.keepintvl, sizeof cfg.keepintvl) < 0){
+            return -1;
+        }
     }
     if(connect(socket_fd, (struct sockaddr *) address, sizeof(*address)) < 0){
         std::cout << "Failed to connect" << std::endl;

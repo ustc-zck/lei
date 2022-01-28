@@ -67,6 +67,8 @@ int Server::Run(){
         //specifying timeout equals 0 causes epoll_wait to  return immediately, even if no events are available.
         //blocking timeout here...
         n = epoll_wait(efd, events, MAXEVENTS, 0);
+        //
+        int thread_index = 0;
         for(int i = 0; i < n; i++){
             if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (events[i].events &  EPOLLRDHUP)){
                 //closing  a socket fd causes it to be removed from epoll sets...
@@ -100,11 +102,14 @@ int Server::Run(){
                 }
                 else {
                     //IO event...
-                    Socket* s = new Socket(events[i].data.fd);
+                    //single thread....
+                    //Wrapper(events[i].data.fd);
+                    int fd = events[i].data.fd;
+                    Socket* s = new Socket(fd);
                     //about the buf size, there is a balance here...
                     int n = s->Recev();
                     if (n < 0){
-                        continue;
+                        close(fd);
                     }   
 
                     char* buf = s->ReadBuf();
@@ -113,8 +118,16 @@ int Server::Run(){
                     char* toWrite = Handler(buf);
                     //error happened, close fd...
                     if(s->Send(toWrite) < 0){
-                        close(events[i].data.fd);
+                        close(fd);
                     }
+                    
+                    //thread pool...
+                    // int fd = events[i].data.fd;
+                    // while(threads[thread_index % MAXTHREADS].joinable() == false){
+                    //     thread_index++;
+                    // }
+                    // threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
+                    // threads[thread_index % MAXTHREADS].join();
                 }
             } else{
                 //TODO...
