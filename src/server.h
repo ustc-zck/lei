@@ -27,7 +27,8 @@ class Server{
             Socket* s = new Socket(fd);
             //about the buf size, there is a balance here...
             int n = s->Recev();
-            if (n < 0){
+            //readble but can not recev data, close fd...
+            if (n <= 0){
                 close(fd);
                 return;
             }   
