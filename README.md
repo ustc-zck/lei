@@ -24,7 +24,7 @@ int main(){
 }
 ```
 
-To add a timer event, just need to call AddTimeEvent function
+To run a timer event in loop, just need to call AddTimeEvent function
 
 ```
 #include <iostream>
