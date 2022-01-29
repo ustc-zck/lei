@@ -38,8 +38,13 @@ Server::Server(int port){
         abort();
     }
     timer_socket = new Socket(tfd);
-    std::vector<std::thread> ths(MAXTHREADS);
-    threads = std::move(ths);
+    // std::vector<std::thread> ths(MAXTHREADS);
+    // threads = std::move(ths);
+    for(int i = 0; i < MAXTHREADS; i++){
+        Thread* s = new Thread();
+        threads.push_back(s);
+    }
+   
 }
 
 int Server::AddTimeEvent(int milliseconds){
@@ -103,20 +108,30 @@ int Server::Run(){
                 }
                 else {
                     //Wrapper(events[i].data.fd);
-                    int fd = events[i].data.fd;
-                    //find a joinable thread...
-                    threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
-                    while(!threads[thread_index % MAXTHREADS].joinable()){
-                        thread_index++;
-                        threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
-                    }
-                    threads[thread_index % MAXTHREADS].join();
+                    // int fd = events[i].data.fd;
+                    // //find a joinable thread...
+                    // threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
+                    // while(!threads[thread_index % MAXTHREADS].joinable()){
+                    //     thread_index++;
+                    //     threads[thread_index % MAXTHREADS] = std::thread(&Server::Wrapper, this, fd);
+                    // }
+                    // threads[thread_index % MAXTHREADS].join();
+                    threads[i % MAXTHREADS]->Add(events[i].data.fd);
                 }
             } else{
                 //TODO...
                 continue;
+            }   
+            //run thread pool... 
+            for(auto th : threads){
+                th->thread = std::thread(&Server::Wrapper, this, th->fds);
             }
-            
+            for(auto th : threads){
+                th->Join();
+            }
+            for(auto th : threads){
+                th->Clear();
+            }
         }
     }
 }
