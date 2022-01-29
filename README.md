@@ -1,5 +1,5 @@
 # lei
-A simple net/tcp library using Reactor model, supporting IO event and timer event. Thread pool is used to improve performance.
+A simple net/tcp library using Reactor model, supporting IO event and timer event. Thread pool is used to improve performance. 
 
 #EXAMPLE
 
@@ -48,4 +48,5 @@ int main(){
 
 
 #TODO 
+
 Now, signal event is not sopprted in this library, which will be added in the future.
