@@ -5,8 +5,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
-#include <thread>
-
+#include "thread.h"
 
 //to be optimized...
 const int MAXEVENTS = 4096;
@@ -23,25 +22,26 @@ class Server{
         //Add time event...
         int AddTimeEvent(int millisceonds);
         //wrapper...
-        void Wrapper(int fd){
-            Socket* s = new Socket(fd);
-            //about the buf size, there is a balance here...
-            int n = s->Recev();
-            //readble but can not recev data, close fd...
-            if (n <= 0){
-                close(fd);
-                return;
-            }   
-            char* buf = s->ReadBuf();
-            buf[n] = '\0';
-            //call Handler...
-            char* toWrite = Handler(buf);
-            //error happened, close fd...
-            if(s->Send(toWrite) < 0){
-                close(fd);
+        void Wrapper(std::vector<int> fds){
+            for(auto fd : fds){
+                Socket* s = new Socket(fd);
+                //about the buf size, there is a balance here...
+                int n = s->Recev();
+                //readble but can not recev data, close fd...
+                if (n <= 0){
+                    close(fd);
+                    return;
+                }   
+                char* buf = s->ReadBuf();
+                buf[n] = '\0';
+                //call Handler...
+                char* toWrite = Handler(buf);
+                //error happened, close fd...
+                if(s->Send(toWrite) < 0){
+                    close(fd);
+                }
             }
-        }
-       
+        }    
         //run server...
         int Run();
     private:
@@ -52,5 +52,6 @@ class Server{
         Socket* listen_socket;
         Socket* timer_socket;
         //thread pool...
-        std::vector<std::thread> threads;
+        //std::vector<std::thread> threads;
+        std::vector<Thread*> threads;
 };
