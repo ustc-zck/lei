@@ -49,4 +49,4 @@ int main(){
 
 #TODO 
 
-Now, signal event is not sopprted in this library, which will be added in the future.
+Now, signal event is not supported in this library, which will be added in the future.
